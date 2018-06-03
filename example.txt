@@ -1,0 +1,2 @@
+docker build -t camcorder-dvd-extractor .
+docker run --rm -v /mnt/sdc1/miniDVD.bak/A:/dvd -v /mnt/sdb1/miniDVD/A/mp4:/mp4 -v /mnt/sdb1/miniDVD/A/log:/log camcorder-dvd-extractor

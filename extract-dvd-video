@@ -1,0 +1,108 @@
+#!/bin/bash
+
+for loc in /dvd /mp4 /log; do
+    if [ ! -d $loc ]; then
+        echo "No $loc, exiting"
+        exit 1
+    fi
+done
+
+pushd /dvd > /dev/null
+
+# DVD-VIDEO:
+if [ -f VIDEO_TS.IFO ]; then
+
+    # get count of titles and chapters: 
+    lsdvd -q . 2> /dev/null | grep '^Title:' | tr ',' ' ' | awk '{for (c=1; c<=$6; c++) {print "-t", 0+$2, "-c", c}}' > /tmp/tc
+
+    {
+        # apt update && apt install transcode subtitleripper
+        tcextract -i VIDEO_TS.VOB -x ps1 -t vob -a 0x20 | subtitle2pgm -o /tmp/menu
+
+        getdt () {
+          pamcut  $1 $2 $3 $4 $5 | 
+          pnminvert | 
+          gocr - 2> /dev/null | 
+          { 
+            read dmy; 
+            read hmt; 
+            if [ "${dmy}$hmt" ]; then 
+              y=$(echo $dmy | sed 's,\([0-9]*\)\.\([A-Z]*\)\.\([0-9]*\),\3,')
+              m=$(echo $dmy | sed -e 's,\([0-9]*\)\.\([A-Z]*\)\.\([0-9]*\),\2,;s,JAN,01,;s,FEB,02,;s,MAR,03,;s,APR,04,;s,MAY,05,;s,JUN,06,;s,JUL,07,;s,AUG,08,;s,SEP,09,;s,OCT,10,;s,NOV,11,;s,DEC,12,')
+              d=$(echo $dmy | sed 's,\([0-9]*\)\.\([A-Z]*\)\.\([0-9]*\),\1,')
+              chmt=$(echo $hmt | tr 'O' '0')
+              date '+%Y%m%d_%H%M' -d "$y-$m-$d $chmt"
+            fi; 
+          }
+        }
+
+        i=1
+        for m in /tmp/menu[0-9]*.pgm; do
+          n=$(echo $m | sed 's,menu,,')
+          getdt  58 172 150 34 $m
+          getdt 242 172 150 34 $m
+          getdt 426 172 150 34 $m
+          getdt  58 346 150 34 $m
+          getdt 242 346 150 34 $m
+          getdt 426 346 150 34 $m
+        done | awk '
+        BEGIN {
+          n=1
+        }
+        {
+          if ($1 == last) {
+            n=n+1
+          } else {
+            n=1
+          }
+          if (n>1) {
+            printf "%s-%d\n", $1, n
+          } else {
+            print $1
+          }
+          last=$1
+        }
+        ' | sed 's,.*,-o /mp4/&.mp4,'
+        rm /tmp/menu[0-9]*.pgm /tmp/menu.srtx
+    } > /tmp/ts
+    tc_len=$(wc -l /tmp/tc | cut -d" " -f1)
+    ts_len=$(wc -l /tmp/ts | cut -d" " -f1)
+    if [ "$tc_len" != "$ts_len" ]; then
+        echo "Error: chapter count from lsdvd \($tc_len\) does not match count of menu items found \($ts_len\), exiting."
+        exit 1
+    else
+        echo "Found a DVD-Video format disk:"
+        paste /tmp/tc /tmp/ts |
+        sed -e 's,  *, ,g' -e 's,.*,HandBrakeCLI --preset-import-file /etc/miniDVD.json --preset miniDVD -i . &,' |
+        while read extract; do
+            ds=$(basename $(echo $extract | awk '{print $13}') .mp4)
+            echo Transcoding $ds
+            $extract < /dev/null > /log/${ds}.log 2>&1
+        done
+        rm /tmp/tc /tmp/ts
+    fi
+elif [ -f VR_MOVIE.VRO ]; then
+    pushd /tmp > /dev/null
+    dvd-vr /dvd/VR_MANGR.IFO /dvd/VR_MOVIE.VRO > /log/dvd-vr.log
+    if [ "$(ls *.vob | wc -l)" -gt 0 ]; then
+        echo "Found a DVD-VR format disk:"
+        for f in *.vob; do
+            mv $f $(echo $f | sed 's,[:-],,g')
+        done
+        for f in *.vob; do
+            ds=$(basename $f .vob)
+            echo Transcoding $ds
+            HandBrakeCLI --preset-import-file /etc/miniDVD.json --preset miniDVD -i $f -o /mp4/${ds}.mp4 < /dev/null > /log/${ds}.log 2>&1
+            rm "$f"
+        done
+    else
+        echo "Error: no chapters found on DVD-VR format disk, exiting."
+        exit 1
+    fi
+    popd > /dev/null
+else
+    echo "No DVD found"
+    exit 1
+fi
+
+popd > /dev/null

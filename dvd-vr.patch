@@ -1,0 +1,26 @@
+*** Makefile.orig	Sun May  6 08:30:44 2018
+--- Makefile	Sun May  6 08:34:08 2018
+***************
+*** 93,103 ****
+  mandir := $(datadir)/man
+  man1dir := $(mandir)/man1
+  bindir := $(PREFIX)/bin
+
+  .PHONY: install
+! install: $(BINARY)
+  	-@mkdir -p $(DESTDIR)$(bindir)
+  	cp -p $(BINARY) $(DESTDIR)$(bindir)
+  	-@mkdir -p $(DESTDIR)$(man1dir)
+  	gzip -c man/$(NAME).1 > $(DESTDIR)$(man1dir)/$(NAME).1.gz
+
+--- 93,103 ----
+  mandir := $(datadir)/man
+  man1dir := $(mandir)/man1
+  bindir := $(PREFIX)/bin
+
+  .PHONY: install
+! install: $(BINARY) man
+  	-@mkdir -p $(DESTDIR)$(bindir)
+  	cp -p $(BINARY) $(DESTDIR)$(bindir)
+  	-@mkdir -p $(DESTDIR)$(man1dir)
+  	gzip -c man/$(NAME).1 > $(DESTDIR)$(man1dir)/$(NAME).1.gz

@@ -1,0 +1,33 @@
+*** spudec.c.orig	Mon May  7 10:31:15 2018
+--- spudec.c	Mon May  7 10:31:32 2018
+***************
+*** 173,186 ****
+      for (type = this->packet[off++]; type != 0xff; type = this->packet[off++]) {
+        //fprintf(stderr,"cmd=%d  ",type);
+        switch(type) {
+        case 0x00:
+        case 0x01:
+!           if( this->end_pts==-1 ) {
+                this->end_pts = pts100 + date*(100*1024/90000.0);
+                spudec_handle_rest(this);
+!           }
+  	/* Start display, no arguments */
+  	  //fprintf(stderr,"Start display:%d--%d!\n",pts100,date);
+          this->is_forced = (type==0);
+  	this->start_pts = pts100 + date*(100*1024/90000.0);
+          this->end_pts = -1;
+--- 173,186 ----
+      for (type = this->packet[off++]; type != 0xff; type = this->packet[off++]) {
+        //fprintf(stderr,"cmd=%d  ",type);
+        switch(type) {
+        case 0x00:
+        case 0x01:
+!           //if( this->end_pts==-1 ) {
+                this->end_pts = pts100 + date*(100*1024/90000.0);
+                spudec_handle_rest(this);
+!           //}
+  	/* Start display, no arguments */
+  	  //fprintf(stderr,"Start display:%d--%d!\n",pts100,date);
+          this->is_forced = (type==0);
+  	this->start_pts = pts100 + date*(100*1024/90000.0);
+          this->end_pts = -1;

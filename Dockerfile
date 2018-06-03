@@ -3,7 +3,7 @@ FROM phusion/baseimage:0.10.1 as updated
 RUN apt-get update && apt-get dist-upgrade -y
 CMD ["/sbin/my_init"]
 
-# Build patched version of subtitleripper
+# Build a patched version of subtitleripper
 FROM updated as build-subtitleripper
 COPY subtitleripper.patch /root/
 RUN sed -i 's,# deb-src http://archive.ubuntu.com/ubuntu/ xenial multiverse,deb-src http://archive.ubuntu.com/ubuntu/ xenial multiverse,' /etc/apt/sources.list \

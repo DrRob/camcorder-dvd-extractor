@@ -40,11 +40,13 @@ The container requires three volumes to be mounted:
 * `/mp4` - where the resulting MP4 files will be written to
 * `/log` - where log files will be written
 
+```
     docker run --rm \
       -v /mnt/sdc1/miniDVD/A:/dvd \
       -v /mnt/sdb1/miniDVD/A/mp4:/mp4 \
       -v /mnt/sdb1/miniDVD/A/log:/log \
       camcorder-dvd-extractor
+```
 
 You should see something like this:
 
